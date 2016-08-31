@@ -107,7 +107,7 @@ void print_array(std::ostream& out, I beg, I end, const size_t width, const char
     std::ios::fmtflags f( out.flags() );
     for(;beg != end;++beg)
     {
-        out << " ";
+        out << "	";
         out.width(width);
         out.fill(fillch);
         out << std::left << *beg;
