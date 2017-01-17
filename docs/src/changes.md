@@ -1,5 +1,86 @@
 # Changes                                               {#changes}
 
+## v1.0.14
+
+Date       | Description
+---------- | -----------
+2016-12-21 | Replace interop2csv with dumptext
+2016-12-20 | IPA-5923: Fix bug in legacy q-metric binning
+2016-12-19 | Removes the coverity run from the build matrix for every pull request
+2016-12-16 | IPA-5885: Ensure error summary matches requirements
+2016-12-14 | Enhance C# version information
+2016-12-14 | Clean up unused enum types
+2016-12-12 | IPA-5153: Ensure Summary tab calculations are consistent with Docs
+2016-12-09 | IPA-5883: Fix possible memory issue in MSVC12
+2016-12-08 | IPA-4674: Add support for absolute naming convention
+2016-12-07 | IPA-5869: Add section filtering
+2016-12-06 | IPA-5734: Synchronize master
+2016-12-02 | Add Google Analytics tracking to documentation
+2016-12-08 | Added admonition to avoid using MSVC 12 (2013) with C# bindings
+2016-12-08 | Added support for absolute tile naming
+2016-12-08 | Added ability to do section filtering
+2016-12-05 | Added regression tests for imaging
+2016-12-05 | Added unit tests for format coverage
+2016-11-17 | Improved performance of InterOp calculations for C++11 enabled version
+2016-11-14 | Added version to Windows DLLs
+2016-11-14 | Added regression tests for indexing
+2016-11-09 | Added unit tests for clearing logic
+2016-11-07 | Added regression tests for analysis plots
+2016-11-01 | Improved performance of InterOp loading
+2016-10-26 | Added path class to handle RTA output filenames
+2016-09-22 | Added regression tests for summary
+
+
+## v1.0.13
+
+Date       | Description
+---------- | -----------
+2016-11-30 | Removed Win32 build testing - this is not supported
+2016-11-28 | IPA-5830: Fix tile naming bug for on demand datasets
+2016-10-19 | Remove time from imaging table
+2016-09-27 | IPA-5213: Create per surface summary model/logic/app
+
+
+## v1.0.12
+
+Date       | Description
+---------- | -----------
+2016-09-26 | IPA-5210: Create CSV parsable summary output
+2016-09-23 | IPA-5194: Create nuspec package file
+2016-09-17 | Refactor individual metric unit tests
+2016-09-17 | Refactor metric stream tests
+2016-09-14 | Reorganized code into own stat util file
+2016-09-14 | Fixes error rate at a specific cycle when tiles are at different cycles
+2016-09-14 | Add version information for zip archives
+2016-09-14 | IPA-5070: Add optional flag to skip median for summary
+2016-09-13 | Ensure ANSI build is being tested
+
+
+## v1.0.11
+
+Date       | Description
+---------- | -----------
+2016-09-12 | Fixed bug in q-score heatmap and q-score clearing
+2016-09-12 | Added summary regression test, fixed regression test framework, fixed runParameters reading
+2016-09-09 | Added sentinel for missing values in the heatmap type plots
+2016-09-09 | Fixed invalid pointer deference and double free in MSVC
+2016-09-08 | Added sentinel for missing values in the imaging table
+2016-09-08 | Fixed potential problem found by coverity
+2016-09-07 | IPA-5101: Fix MSVC bug in vector type loading (Master)
+2016-09-02 | Added buffered reader to improve loading speed
+2016-09-01 | Bug fix for SWIG in on-demand loading
+
+## v1.0.10
+
+Date       | Description
+---------- | -----------
+2016-09-01 | Bug fix clearing the summary stat prior to setting it
+2016-09-01 | Fixed a bug in QMetrics V6 Unbinned, added unit test and C# example
+2016-08-31 | IPA-5069: Flush out on demand loading further for each tab
+2016-08-30 | Various minor fixes to get public working with Clang3.4 and MSVC12
+2016-08-30 | Bug fix to RunInfo section validation
+2016-08-30 | IPA-5069: Support on demand loading for SAV (Part 1)
+2016-08-26 | IPA-5028: Add RunInfo and InterOp validation
 
 ## v1.0.9
 

@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include "interop/util/map.h"
 #include "interop/logic/summary/map_cycle_to_read.h"
 #include "interop/model/metric_base/metric_set.h"
 #include "interop/model/metrics/tile_metric.h"
@@ -43,8 +44,8 @@ namespace illumina { namespace interop { namespace logic { namespace summary
         cycle_range_vector2d_t summary_by_lane_read(run.size(), std::vector<cycle_range>(run.lane_count()));
 
         typedef model::metrics::tile_metric::id_t id_t;
-        typedef std::map<id_t, cycle_range> cycle_range_tile_t;
-        typedef std::map<id_t, size_t> max_tile_map_t;
+        typedef INTEROP_UNORDERED_MAP(id_t, cycle_range) cycle_range_tile_t;
+        typedef INTEROP_UNORDERED_MAP(id_t, size_t) max_tile_map_t;
         typedef typename max_tile_map_t::const_iterator const_max_tile_iterator;
         typedef std::vector<cycle_range_tile_t> cycle_range_by_read_tile_t;
         cycle_range_by_read_tile_t tmp(summary_by_lane_read.size());
@@ -57,14 +58,16 @@ namespace illumina { namespace interop { namespace logic { namespace summary
             INTEROP_ASSERT((cycle_metric_it->cycle() - 1) < cycle_to_read.size());
 
             if ((cycle_metric_it->cycle() - 1) >= cycle_to_read.size())
-                throw model::index_out_of_bounds_exception("Cycle exceeds total cycles from Reads in the RunInfo.xml");
+                INTEROP_THROW(model::index_out_of_bounds_exception, "Cycle exceeds total cycles from Reads in the RunInfo.xml");
             const read_cycle &read = cycle_to_read[cycle_metric_it->cycle() - 1];
             if (read.number == 0) continue;
             INTEROP_ASSERT((read.number - 1) < tmp.size());
-            const id_t id = model::metric_base::base_metric::create_id(cycle_metric_it->lane(), cycle_metric_it->tile());
+
+            const id_t id = cycle_metric_it->tile_hash();
             tmp[read.number - 1][id].update(cycle_metric_it->cycle());
             typename max_tile_map_t::iterator it = tmp_by_tile.find(id);
-            if (it == tmp_by_tile.end()) tmp_by_tile[id] = cycle_metric_it->cycle();
+            if (it == tmp_by_tile.end())
+                tmp_by_tile[id] = cycle_metric_it->cycle();
             else it->second = std::max(static_cast<size_t>(cycle_metric_it->cycle()), it->second);
         }
 
@@ -76,7 +79,7 @@ namespace illumina { namespace interop { namespace logic { namespace summary
             const id_t id = model::metric_base::base_metric::create_id(tile_it->lane(), tile_it->tile());
             for (size_t read_index = 0; read_index < tmp.size(); ++read_index)
             {
-                if (tmp[read_index].find(tile_it->id()) == tmp[read_index].end())
+                if (tmp[read_index].find(tile_it->tile_hash()) == tmp[read_index].end())
                 {
                     tmp[read_index][id].update(run[read_index].read().first_cycle() - 1);
                     tmp_by_tile[id] = 0;
@@ -119,3 +122,4 @@ namespace illumina { namespace interop { namespace logic { namespace summary
     }
 
 }}}}
+

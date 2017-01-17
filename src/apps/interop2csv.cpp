@@ -4,6 +4,8 @@
  * the data as a special type of CSV (common separated format) file. The program takes the run folder as an input
  * and then writes the data as plain text to the console. This data can then be redirected to a file.
  *
+ * @warning This program is deprecated and will be removed. Use dumptext instead
+ *
  * ### Running the Program
  *
  * The program runs as follows:
@@ -115,15 +117,8 @@
 #include <iostream>
 #include <iomanip>
 #include "interop/io/metric_file_stream.h"
-#include "interop/model/metrics/q_metric.h"
-#include "interop/model/metrics/q_by_lane_metric.h"
-#include "interop/model/metrics/q_collapsed_metric.h"
-#include "interop/model/metrics/tile_metric.h"
-#include "interop/model/metrics/error_metric.h"
-#include "interop/model/metrics/corrected_intensity_metric.h"
-#include "interop/model/metrics/extraction_metric.h"
-#include "interop/model/metrics/image_metric.h"
-#include "interop/model/metrics/index_metric.h"
+#include "interop/model/run_metrics.h"
+#include "interop/logic/utils/enums.h"
 #include "interop/logic/metric/q_metric.h"
 #include "interop/version.h"
 #include "inc/application.h"
@@ -168,6 +163,9 @@ int main(int argc, char** argv)
         if(kPrintError) print_help(std::cout);
         return 1;
     }
+
+    // TODO: Fix up this application!
+    std::cerr << "WARNING: This program is a debug utility and not currently supported. See the docs." << std::endl;
 
     for(int i=1;i<argc;i++)
     {
@@ -309,7 +307,7 @@ int write_tile_metrics(std::ostream& out, const std::string& filename)
 
     write_header(out, metrics);
     out << "Lane,Tile,Count,CountPF,Density,DensityPF\n";
-    for(tile_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(tile_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const tile_metric& metric = *beg;
         write_id(out, metric);
@@ -318,7 +316,7 @@ int write_tile_metrics(std::ostream& out, const std::string& filename)
 
     write_header(out, metrics);
     out << "Lane,Tile,Read,Aligned,Prephasing,Phasing\n";
-    for(tile_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(tile_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const tile_metric& metric = *beg;
         for(tile_metric::read_metric_vector::const_iterator rbeg = metric.read_metrics().begin(), rend = metric.read_metrics().end();rbeg != rend;++rbeg)
@@ -411,6 +409,8 @@ int write_corrected_intensity_metrics(std::ostream& out, const std::string& file
 
     return res;
 }
+
+
 /** Write extraction metrics to the output stream
  *
  * Binary File:
@@ -439,7 +439,7 @@ int write_extraction_metrics(std::ostream& out, const std::string& filename) thr
     out << "P90_1,P90_2,P90_3,P90_4,";
     out << "Focus_1,Focus_2,Focus_3,Focus_4";
     out << "\n";
-    for(extraction_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(extraction_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const extraction_metric& metric = *beg;
         write_id(out, metric);
@@ -483,7 +483,7 @@ int write_image_metrics(std::ostream& out, const std::string& filename)
     for(size_t i=0;i<metrics.channel_count();i++)
         out << ",MaxContrast_" << i+1;
     out << "\n";
-    for(image_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(image_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const image_metric& metric = *beg;
         write_id(out, metric);
@@ -524,7 +524,7 @@ int write_collapsed_q_metrics(std::ostream& out, const std::string& filename)
 
     write_header(out, metrics);
     out << "Lane,Tile,Cycle,Q20,Q30,Total,MedianQScore\n";
-    for(const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const q_collapsed_metric& metric = *beg;
         write_id(out, metric);
@@ -589,7 +589,7 @@ int write_q_metrics(std::ostream& out, const std::string& filename)
     for(size_t i=0;i<hist_bin_count;++i)
         out << ",BinCount" << i+1;
     out << "\n";
-    for(q_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(q_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const q_metric& metric = *beg;
         write_id(out, metric);
@@ -659,7 +659,7 @@ int write_q_by_lane_metrics(std::ostream& out, const std::string& filename)
     for(size_t i=0;i<hist_bin_count;++i)
         out << ",BinCount" << i+1;
     out << "\n";
-    for(q_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    for(q_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const q_metric& metric = *beg;
         write_id(out, metric);
@@ -696,14 +696,14 @@ int write_index_metrics(std::ostream& out, const std::string& filename)
     if(res != 0) return res;
 
     write_header(out, metrics);
-    out << "Lane,Tile,Read,Sequence,Sample,Project,Count\n";
-    for(index_metric_set::metric_array_t::const_iterator beg = metrics.metrics().begin(), end = vec_end(metrics.metrics());beg != end;++beg)
+    out << "Lane,Tile,Read,Sequence,Sample,Project,ClusterCount\n";
+    for(index_metric_set::metric_array_t::const_iterator beg = metrics.begin(), end = vec_end(metrics);beg != end;++beg)
     {
         const index_metric& metric = *beg;
         for(index_metric::index_array_t::const_iterator index_beg=metric.indices().begin(), index_end=metric.indices().end();index_beg != index_end;++index_beg)
         {
             write_id(out, metric);
-            out << index_beg->index_seq() << "," << index_beg->sample_id() << "," << index_beg->sample_proj() << "," << index_beg->count() << "\n";
+            out << index_beg->index_seq() << "," << index_beg->sample_id() << "," << index_beg->sample_proj() << "," << index_beg->cluster_count() << "\n";
         }
     }
 
@@ -778,4 +778,5 @@ void print_help(std::ostream& out)
     out << "Version: " << INTEROP_VERSION << std::endl;
     out << "Usage: interop2csv run-folder" << std::endl;
 }
+
 

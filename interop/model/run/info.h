@@ -80,8 +80,8 @@ namespace illumina { namespace interop { namespace model { namespace run
          * @param reads description of the reads
          */
         info(const flowcell_layout &flowcell,
-             const str_vector_t &channels,
-             const read_vector_t &reads) :
+             const str_vector_t &channels=str_vector_t(),
+             const read_vector_t &reads=read_vector_t()) :
                 m_version(0),
                 m_flowcell(flowcell),
                 m_channels(channels),
@@ -202,6 +202,28 @@ namespace illumina { namespace interop { namespace model { namespace run
                 if (b->is_index()) return true;
             return false;
         }
+        /** Test if cycle is last cycle of a read
+         *
+         * @param cycle cycle number to test
+         * @return true if the cycle number equals the last cycle of a read
+         */
+        bool is_last_cycle_of_read(const size_t cycle)const
+        {
+            for (read_vector_t::const_iterator b = m_reads.begin(), e = m_reads.end(); b != e; ++b)
+                if (b->last_cycle() == cycle) return true;
+            return false;
+        }
+        /** Get the cycle number within a read (0 is returned for invalid cycles)
+         *
+         * @param cycle cycle number to test
+         * @return cycle number within read
+         */
+        size_t cycle_within_read(const size_t cycle)const
+        {
+            for (read_vector_t::const_iterator b = m_reads.begin(), e = m_reads.end(); b != e; ++b)
+                if ( cycle <= b->last_cycle()) return cycle-b->first_cycle() + 1;
+            return 0;
+        }
 
         /** Get read with given number
          *
@@ -222,6 +244,16 @@ namespace illumina { namespace interop { namespace model { namespace run
         void channels(const str_vector_t &channels)
         { m_channels = channels; }
 
+        /** Set the reads info
+         *
+         * @param read_vec reads info
+         */
+        void reads(const read_vector_t& read_vec)
+        {
+            m_reads = read_vec;
+            m_total_cycle_count = total_cycles();
+        }
+
         /** Set the tile naming method
          *
          * @param naming_method tile naming method
@@ -230,6 +262,12 @@ namespace illumina { namespace interop { namespace model { namespace run
         {
             m_flowcell.set_naming_method(naming_method);
         }
+        /** Set the layout of the flowcell
+         *
+         * @param flowcell layout of the flowcell
+         */
+        void flowcell(const flowcell_layout & flowcell)
+        { m_flowcell = flowcell; }
 
         /** Get total number of cycles
          *
@@ -293,4 +331,5 @@ namespace illumina { namespace interop { namespace model { namespace run
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 

@@ -10,7 +10,13 @@
 
 #include <climits>
 #include <limits>
+#include <string>
 #include "interop/util/cstdint.h"
+
+/** Sentinel for an unknown enum type */
+#define INTEROP_UNKNOWN 0x100
+
+
 /** Enumeration of specific features that can belong to a metric
  *
  * @note This macro requires the macro INTEROP_TUPLE2 to be defined before use
@@ -193,6 +199,27 @@
         INTEROP_TUPLE1(Black),\
         INTEROP_TUPLE1(UnknownColor)
 
+/** Enumeration of plot types
+ *
+ * @note This macro requires the macro INTEROP_TUPLE1 to be defined before use
+ * @see illumina::interop::constants::plot_types
+ */
+#define INTEROP_ENUM_PLOT_TYPES \
+        /** Spatial plot by tile */\
+        INTEROP_TUPLE1(FlowcellPlot),\
+        /** Plot data aggrergated by cycle */\
+        INTEROP_TUPLE1(ByCyclePlot),\
+        /** Spatial plot aggrergated by lane */\
+        INTEROP_TUPLE1(ByLanePlot),\
+        /** Histogram of q-scores */\
+        INTEROP_TUPLE1(QHistogramPlot),\
+        /** Heatmap of q-scores by cycle */\
+        INTEROP_TUPLE1(QHeatmapPlot),\
+        /** Indexing tab plot */\
+        INTEROP_TUPLE1(SampleQCPlot),\
+        /** Unknown plot type */\
+        INTEROP_TUPLE1(UnknownPlotType)
+
 /** Enumeration of bar plot options
  *
  * @note This macro requires the macro INTEROP_TUPLE1 to be defined before use
@@ -205,8 +232,11 @@
         INTEROP_TUPLE1(Shifted),\
         INTEROP_TUPLE1(UnknownBarPlotOption)
 
-/** Sentinel for an unknown enum type */
-#define INTEROP_UNKNOWN 0xff
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+// Define x-macros
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 /** This temp macro converts a enum/description pair into the an enum (first element of the pair) */
 #define INTEROP_TUPLE4(X, Y, Z, A) X
 /** This temp macro converts a enum/description pair into the an enum (first element of the pair) */
@@ -278,12 +308,19 @@ namespace illumina { namespace interop { namespace constants
     /** Options describing metric features */
     enum metric_feature_type
     {
-        INTEROP_ENUM_METRIC_FEATURE_TYPE
+        INTEROP_ENUM_METRIC_FEATURE_TYPE = INTEROP_UNKNOWN
     };
+    /** Options for a bar plot */
+    enum plot_types
+    {
+        INTEROP_ENUM_PLOT_TYPES = INTEROP_UNKNOWN
+    };
+
 }}}
 
 #undef INTEROP_TUPLE1
 #undef INTEROP_TUPLE2
 #undef INTEROP_TUPLE3
 #undef INTEROP_TUPLE4
+
 

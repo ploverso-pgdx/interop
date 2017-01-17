@@ -73,12 +73,14 @@ namespace illumina { namespace interop { namespace logic { namespace plot
     model::invalid_metric_type,
     model::invalid_filter_option)
     {
+        data.clear();
+        if(metrics.is_group_empty(logic::utils::to_group(type))) return;
         if(utils::is_cycle_metric(type))
-            INTEROP_THROW(model::invalid_metric_type, "Cycle metrics are unsupported");
+            INTEROP_THROW(model::invalid_metric_type, "Cycle metrics are unsupported: " << constants::to_string(type));
         options.validate(type, metrics.run_info());
         data.assign(1, model::plot::series<Point>(utils::to_description(type), "Blue"));
         metric::metric_value<model::metrics::tile_metric> proxy3(options.read());
-        populate_candle_stick_by_lane(metrics.get_set<model::metrics::tile_metric>(), proxy3, options, type,
+        populate_candle_stick_by_lane(metrics.get<model::metrics::tile_metric>(), proxy3, options, type,
                                       data[0]);
 
         const size_t read_count = metrics.run_info().reads().size();
@@ -91,7 +93,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             const constants::metric_type second_type =
                     (type==constants::Clusters ? constants::ClustersPF : constants::ClusterCountPF);
             //(type==constants::Density ? constants::DensityPF : constants::ClusterCountPF);
-            populate_candle_stick_by_lane(metrics.get_set<model::metrics::tile_metric>(), proxy3, options, second_type,
+            populate_candle_stick_by_lane(metrics.get<model::metrics::tile_metric>(), proxy3, options, second_type,
                                           data[1]);
         }
 
@@ -163,40 +165,26 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      * @param types destination vector to fill with metric types
      * @param ignore_pf if true, ignore density PF and cluster PF
      */
-    void list_by_lane_metrics(std::vector<constants::metric_type>& types, const bool ignore_pf)
+    void list_by_lane_metrics(std::vector< logic::utils::metric_type_description_t >& types, const bool ignore_pf)
     {
-        std::vector<constants::metric_type> tmp;
-        constants::list_enums(tmp);
-        types.clear();
-        types.reserve(tmp.size());
-        for(size_t i=0;i<tmp.size();++i)
+        utils::list_descriptions(types);
+        std::vector< logic::utils::metric_type_description_t >::iterator dst = types.begin();
+        for(std::vector< logic::utils::metric_type_description_t >::iterator src = types.begin();src != types.end();++src)
         {
-            if(utils::to_feature(tmp[i]) == constants::UnknownMetricFeature) continue;
+            const constants::metric_type type = *src;
+            if(utils::to_feature(type) == constants::UnknownMetricFeature) continue;
             if(ignore_pf)
             {
-                if(tmp[i] == constants::ClustersPF) continue;
-                if(tmp[i] == constants::ClusterCountPF) continue;
+                if(type == constants::ClustersPF) continue;
+                if(type == constants::ClusterCountPF) continue;
             }
-            if(utils::is_cycle_metric(tmp[i])) continue;
-            types.push_back(tmp[i]);
+            if(utils::is_cycle_metric(type)) continue;
+            if(src != dst) std::swap(*src, *dst);
+            ++dst;
         }
+        types.resize(std::distance(types.begin(), dst));
     }
-    /** List metric type names available for by lane plots
-     *
-     * @param names destination vector to fill with metric type names
-     * @param ignore_pf if true, ignore density PF and cluster PF
-     */
-    void list_by_lane_metrics(std::vector<std::string>& names, const bool ignore_pf)
-    {
-        std::vector<constants::metric_type> types;
-        list_by_lane_metrics(types, ignore_pf);
 
-        names.clear();
-        names.reserve(types.size());
-        for(size_t i=0;i<types.size();++i)
-        {
-            names.push_back(utils::to_description(types[i]));
-        }
-    }
 
 }}}}
+

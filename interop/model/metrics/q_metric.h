@@ -1,9 +1,12 @@
 /** Q-score metric
  *
- *
  * The InterOp files parsed by this class include:
  *  - InterOp/QMetrics.bin
  *  - InterOp/QMetricsOut.bin
+ *
+ *  The QMetricsOut.bin InterOp file contains a histogram of the counts of PF clusters at each quality value ranging
+ *  from 1 to 50 for each lane, tile, and cycle.  % >= Q30 is calculated as the sum of the populations in bins with a
+ *  quality value of 30 or greater divided by the total non-N basecalls (sum of the population over all bins) times 100.
  *
  *  @file
  *  @date 8/21/2015
@@ -148,7 +151,7 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          *
          * @return vector of q-score bins
          */
-        const qscore_bin_vector_type &bins() const
+        const qscore_bin_vector_type &get_bins() const
         {
             return m_qscore_bins;
         }
@@ -168,6 +171,12 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          */
         size_t bin_count() const
         { return m_qscore_bins.size(); }
+        /** Get the number of bins in header
+         *
+         * @return number of bins in header
+         */
+        size_t q_val_count() const
+        { return m_qscore_bins.empty() ? static_cast<size_t>(MAX_Q_BINS) : m_qscore_bins.size(); }
 
         /** Get the index for the given q-value
          *
@@ -210,6 +219,13 @@ namespace illumina { namespace interop { namespace model { namespace metrics
             INTEROP_ASSERT(n < binCount());
             return m_qscore_bins[n];
         }
+        /** Clear the data
+         */
+        void clear()
+        {
+            m_qscore_bins.clear();
+            metric_base::base_cycle_metric::header_type::clear();
+        }
 
     protected:
         /** Q-score bins */
@@ -221,6 +237,11 @@ namespace illumina { namespace interop { namespace model { namespace metrics
     };
 
     /** Q-score metric
+     *
+     *  The QMetricsOut.bin InterOp file contains a histogram of the counts of PF clusters at each quality value
+     *  ranging from 1 to 50 for each lane, tile, and cycle.  % >= Q30 is calculated as the sum of the populations in
+     *  bins with a quality value of 30 or greater divided by the total non-N basecalls (sum of the population over
+     *  all bins times) 100.
      *
      * @note Supported versions: 4, 5 and 6
      */
@@ -247,6 +268,9 @@ namespace illumina { namespace interop { namespace model { namespace metrics
         /** Defines a vector of unsigned 32-bit ints
          */
         typedef std::vector< ::uint32_t > uint32_vector;
+        /** Defines a vector of unsigned 32-bit ints (TODO: remove this def)
+         */
+        typedef std::vector< ::uint32_t > uint_vector;
         /** Defines a vector of unsigned 64-bit ints
         */
         typedef std::vector< ::uint64_t > uint64_vector;
@@ -258,6 +282,14 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          */
         q_metric() :
                 metric_base::base_cycle_metric(0, 0, 0)
+        { }
+        /** Constructor
+         *
+         * @param header q-metric set header
+         */
+        q_metric(const header_type& header) :
+                metric_base::base_cycle_metric(0, 0, 0),
+                m_qscore_hist(header.bin_count()==0?static_cast<size_t>(MAX_Q_BINS):header.bin_count())
         { }
 
         /** Constructor
@@ -272,8 +304,7 @@ namespace illumina { namespace interop { namespace model { namespace metrics
                  const uint_t cycle,
                  const uint32_vector &qscore_hist) :
                 metric_base::base_cycle_metric(lane, tile, cycle),
-                m_qscore_hist(qscore_hist),
-                m_qscore_hist_cumulative(qscore_hist.size(), 0)
+                m_qscore_hist(qscore_hist)
         {
         }
 
@@ -291,8 +322,7 @@ namespace illumina { namespace interop { namespace model { namespace metrics
                  const uint_pointer_t qscore_hist,
                  const uint_t count) :
                 metric_base::base_cycle_metric(lane, tile, cycle),
-                m_qscore_hist(qscore_hist, qscore_hist + count),
-                m_qscore_hist_cumulative(count, 0)
+                m_qscore_hist(qscore_hist, qscore_hist + count)
         {
         }
 
@@ -559,6 +589,19 @@ namespace illumina { namespace interop { namespace model { namespace metrics
                 (*it) += (*cur);
             }
         }
+        /** Compress bins
+         *
+         * @param header binned header
+         */
+        void compress(const header_type& header)
+        {
+            if(size() == header.bin_count() || header.bin_count() == 0) return;
+            for(size_t i=0;i<header.bin_count();++i)
+            {
+                m_qscore_hist[i] = m_qscore_hist[static_cast<size_t>(header.bin_at(i).value()-1)];
+            }
+            m_qscore_hist.resize(header.bin_count());
+        }
 
         /** Q-score value of the histogram
          *
@@ -600,4 +643,5 @@ namespace illumina { namespace interop { namespace model { namespace metrics
         struct io::generic_layout;
     };
 }}}}
+
 

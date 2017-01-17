@@ -38,12 +38,13 @@ namespace illumina { namespace interop { namespace model { namespace plot {
         void clear()
         {
             m_series.clear();
+            chart_data::clear();
         }
         /** Resize collection to given size
          *
          * @param n given size
          */
-        void resize(const size_type n)
+        void resize(const size_t n)
         {
             m_series.resize(n);
         }
@@ -52,7 +53,7 @@ namespace illumina { namespace interop { namespace model { namespace plot {
          * @param n given size
          * @param val value to assign
          */
-        void assign(const size_type n, const series<Point>& val)
+        void assign(const size_t n, const series<Point>& val)
         {
             m_series.assign(n, val);
         }
@@ -66,21 +67,11 @@ namespace illumina { namespace interop { namespace model { namespace plot {
         }
         /** Get point at index
          *
+         * @deprecated Will be removed in next feature version (use operator[] instead for C++ Code)
          * @param index index of point
          * @return data point
          */
-        const series<Point>& at(const size_type index)const throw(model::index_out_of_bounds_exception)
-        {
-            if(index >= m_series.size())
-                INTEROP_THROW(model::index_out_of_bounds_exception, "Row index out of bounds");
-            return m_series.at(index);
-        }
-        /** Get point at index
-         *
-         * @param index index of point
-         * @return data point
-         */
-        const_reference operator[](const size_type index)const throw(model::index_out_of_bounds_exception)
+        const series<Point>& at(const size_t index)const throw(model::index_out_of_bounds_exception)
         {
             if(index >= m_series.size())
                 INTEROP_THROW(model::index_out_of_bounds_exception, "Row index out of bounds");
@@ -91,7 +82,18 @@ namespace illumina { namespace interop { namespace model { namespace plot {
          * @param index index of point
          * @return data point
          */
-        reference operator[](const size_type index) throw(model::index_out_of_bounds_exception)
+        series<Point>& operator[](const size_t index) throw(model::index_out_of_bounds_exception)
+        {
+            if(index >= m_series.size())
+                INTEROP_THROW(model::index_out_of_bounds_exception, "Row index out of bounds");
+            return m_series[index];
+        }
+        /** Get point at index
+         *
+         * @param index index of point
+         * @return data point
+         */
+        const series<Point>& operator[](const size_t index)const throw(model::index_out_of_bounds_exception)
         {
             if(index >= m_series.size())
                 INTEROP_THROW(model::index_out_of_bounds_exception, "Row index out of bounds");
@@ -101,9 +103,17 @@ namespace illumina { namespace interop { namespace model { namespace plot {
          *
          * @return number of points in the collection
          */
-        size_type size()const
+        size_t size()const
         {
             return m_series.size();
+        }
+        /** Check if object has points
+         *
+         * @return true if plot has points
+         */
+        bool empty()const
+        {
+            return size()==0;
         }
 
     public:
@@ -123,6 +133,25 @@ namespace illumina { namespace interop { namespace model { namespace plot {
         {
             return m_series.end();
         }
+        friend std::ostream& operator<<(std::ostream& out, const plot_data& data)
+        {
+            out << static_cast<const chart_data&>(data);
+            out << data.m_series.size() << ",";
+            for(size_t i=0;i<data.m_series.size();++i)
+                out << data.m_series[i];
+            return out;
+        }
+        friend std::istream& operator>>(std::istream& in, plot_data& data)
+        {
+            std::string tmp;
+            in >> static_cast<chart_data&>(data);
+            std::getline(in, tmp, ',');
+            size_t n = util::lexical_cast<size_t>(tmp);
+            data.m_series.resize(n);
+            for(size_t i=0;i<data.m_series.size();++i)
+                in >> data.m_series[i];
+            return in;
+        }
 
     private:
         series_collection_t m_series;
@@ -130,3 +159,4 @@ namespace illumina { namespace interop { namespace model { namespace plot {
 
 
 }}}}
+

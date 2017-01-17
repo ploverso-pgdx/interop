@@ -7,14 +7,13 @@
  */
 #pragma once
 
-#include <map>
 #include <vector>
+#include "interop/util/map.h"
 #include "interop/util/assert.h"
+#include "interop/util/self_registration.h"
 #include "interop/io/format/abstract_metric_format.h"
 #include "interop/util/unique_ptr.h"
-#include "interop/util/lexical_cast.h"
 #include "interop/io/stream_exceptions.h"
-#include "interop/io/format/metric_format.h"
 
 /** Register a metric format with the factory
  *
@@ -25,34 +24,19 @@
     illumina::interop::io::metric_format_factory< Metric >  \
     illumina_interop_io_##Type##Metric##Version(new illumina::interop::io::metric_format<Metric, illumina::interop::io::generic_layout<Metric, Version> >);
 
-/** Ensure that static libraries are properly linked
- *  This must be used in a function that will definitely be linked.
+/** Register a metric format with the factory
  *
- *  Tested for Microsoft Visual C++, GCC and CLang
+ * @param Metric metric class
+ * @param Proxy actual metric parser to use
+ * @param Version version number
  */
-#define INTEROP_FORCE_LINK_USE(X) void force_link_metric_format(X*);  force_link_metric_format(0);
-/** Ensure that static libraries are properly linked
- *  This must be used in a file that may not be linked.
- *
- *  Tested for Microsoft Visual C++, GCC and CLang
- */
-#define INTEROP_FORCE_LINK_DEF(X) namespace illumina{namespace interop{namespace io{ void force_link_metric_format(X*){} }}} \
-    void force_link_metric_format(X*){} // For Microsoft Visual C++
+#define INTEROP_REGISTER_METRIC_ANOTHER_GENERIC_LAYOUT(Metric, Proxy, Version) \
+    illumina::interop::io::metric_format_factory< Proxy >  \
+    illumina_interop_io_##Type##Proxy##Version(new illumina::interop::io::metric_format<Proxy, illumina::interop::io::generic_layout<Metric, Version> >);
+
 
 namespace illumina { namespace interop { namespace io
 {
-    /** Metric type adapter
-     *
-     * This class allows a metric derived from another metric to use it's format
-     * For example, q_by_lane_metric uses the q_metric format
-     */
-    template<typename Metric>
-    struct metric_format_adapter
-    {
-        /** Define the template parameter as the target type */
-        typedef Metric metric_t;
-    };
-
     /** Factory for generating metric formats
      *
      * This class defines static methods to register a metric format. The registered metric formats can
@@ -72,7 +56,7 @@ namespace illumina { namespace interop { namespace io
         /** Define a unique pointer to a metric format */
         typedef stdbp::unique_ptr<abstract_metric_format_t> metric_format_pointer;
         /** Define a map between format version and the format */
-        typedef std::map<int, metric_format_pointer> metric_format_map;
+        typedef INTEROP_UNORDERED_MAP(int, metric_format_pointer) metric_format_map;
 
         /** Constructor
          *
@@ -98,4 +82,5 @@ namespace illumina { namespace interop { namespace io
     };
 
 }}}
+
 

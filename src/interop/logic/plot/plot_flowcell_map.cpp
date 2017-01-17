@@ -7,7 +7,6 @@
  */
 #include "interop/logic/plot/plot_flowcell_map.h"
 
-#include "interop/util/math.h"
 #include "interop/logic/metric/metric_value.h"
 #include "interop/logic/metric/q_metric.h"
 
@@ -74,20 +73,24 @@ namespace illumina { namespace interop { namespace logic { namespace plot
     model::invalid_metric_type,
     model::index_out_of_bounds_exception)
     {
-        const model::run::flowcell_layout& layout = metrics.run_info().flowcell();
         data.clear();
+        if(metrics.is_group_empty(logic::utils::to_group(type))) return;
+        options.validate(type, metrics.run_info());
+
+        const model::run::flowcell_layout& layout = metrics.run_info().flowcell();
         if(buffer == 0 || tile_buffer==0)
             data.resize(layout.lane_count(),
                         layout.total_swaths(layout.surface_count() > 1 && !options.is_specific_surface()),
                         layout.tiles_per_lane());
         else
+        {
             data.set_buffer(buffer, tile_buffer, layout.lane_count(),
                             layout.total_swaths(layout.surface_count() > 1 && !options.is_specific_surface()),
                             layout.tiles_per_lane());
+        }
         std::vector<float> values_for_scaling;
         values_for_scaling.reserve(data.length());
 
-        options.validate(type, metrics.run_info());
 
         if(utils::is_cycle_metric(type) && options.all_cycles())
             INTEROP_THROW( model::invalid_filter_option, "All cycles is unsupported");
@@ -99,7 +102,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             {
                 typedef model::metrics::tile_metric metric_t;
                 typedef model::metric_base::metric_set<metric_t> metric_set_t;
-                const metric_set_t& metric_set = metrics.get_set<metric_t>();
+                const metric_set_t& metric_set = metrics.get<metric_t>();
                 metric::metric_value<metric_t> proxy(options.read());
                 populate_flowcell_map(metric_set.begin(), metric_set.end(), proxy, type, layout, options, data,
                                       values_for_scaling);
@@ -109,7 +112,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             {
                 typedef model::metrics::extraction_metric metric_t;
                 typedef model::metric_base::metric_set<metric_t> metric_set_t;
-                const metric_set_t& metric_set = metrics.get_set<metric_t>();
+                const metric_set_t& metric_set = metrics.get<metric_t>();
                 const size_t channel = options.channel();
                 if(options.all_channels(type))
                     INTEROP_THROW(model::invalid_filter_option, "All channels is unsupported");
@@ -122,7 +125,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             {
                 typedef model::metrics::corrected_intensity_metric metric_t;
                 typedef model::metric_base::metric_set<metric_t> metric_set_t;
-                const metric_set_t& metric_set = metrics.get_set<metric_t>();
+                const metric_set_t& metric_set = metrics.get<metric_t>();
                 const constants::dna_bases base = options.dna_base();
                 if(options.all_bases(type))
                     INTEROP_THROW( model::invalid_filter_option, "All bases is unsupported");
@@ -135,10 +138,10 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             {
                 typedef model::metrics::q_collapsed_metric metric_t;
                 typedef model::metric_base::metric_set<metric_t> metric_set_t;
-                metric_set_t &metric_set = metrics.get_set<metric_t>();
+                metric_set_t &metric_set = metrics.get<metric_t>();
                 if(0 == metric_set.size())
                 {
-                    logic::metric::create_collapse_q_metrics(metrics.get_set<model::metrics::q_metric>(), metric_set);
+                    logic::metric::create_collapse_q_metrics(metrics.get<model::metrics::q_metric>(), metric_set);
                     if(type == constants::AccumPercentQ20 || type == constants::AccumPercentQ30)
                         logic::metric::populate_cumulative_distribution(metric_set);
                 }
@@ -151,7 +154,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             {
                 typedef model::metrics::error_metric metric_t;
                 typedef model::metric_base::metric_set<metric_t> metric_set_t;
-                const metric_set_t& metric_set = metrics.get_set<metric_t>();
+                const metric_set_t& metric_set = metrics.get<metric_t>();
                 metric::metric_value<metric_t> proxy;
                 populate_flowcell_map(metric_set.begin(), metric_set.end(), proxy, type, layout, options, data,
                                       values_for_scaling);
@@ -221,38 +224,30 @@ namespace illumina { namespace interop { namespace logic { namespace plot
             INTEROP_THROW(model::invalid_metric_type, "Unsupported metric type: " << metric_name);
         plot_flowcell_map(metrics, type, options, data, buffer, tile_buffer);
     }
+
     /** List metric type names available for flowcell
      *
      * @param types destination vector to fill with metric type names
+     * @param ignore_accumulated exclude accumulated q-metrics
      */
-    void list_flowcell_metrics(std::vector<constants::metric_type>& types)
+    void list_flowcell_metrics(std::vector< logic::utils::metric_type_description_t > &types,
+                               const bool ignore_accumulated)
     {
-        types.clear();
-        std::vector<constants::metric_type> tmp;
-        constants::list_enums(tmp);
-        types.reserve(tmp.size());
-        for(size_t i=0;i<tmp.size();++i)
+        utils::list_descriptions(types);
+        std::vector< logic::utils::metric_type_description_t >::iterator dst = types.begin();
+        for(std::vector< logic::utils::metric_type_description_t >::iterator src = types.begin();src != types.end();++src)
         {
-            if(utils::to_feature(tmp[i]) == constants::UnknownMetricFeature) continue;
-            if(tmp[i] == constants::AccumPercentQ20) continue;
-            if(tmp[i] == constants::AccumPercentQ30)continue;
-            types.push_back(tmp[i]);
+            const constants::metric_type type = *src;
+            if(utils::to_feature(type) == constants::UnknownMetricFeature) continue;
+            if(ignore_accumulated)
+            {
+                if (type == constants::AccumPercentQ20) continue;
+                if (type == constants::AccumPercentQ30)continue;
+            }
+            if(src != dst) std::swap(*src, *dst);
+            ++dst;
         }
-    }
-    /** List metric type names available for flowcell
-     *
-     * @param names destination vector to fill with metric type names
-     */
-    void list_flowcell_metrics(std::vector<std::string>& names)
-    {
-        std::vector<constants::metric_type> types;
-        list_flowcell_metrics(types);
-        names.clear();
-        names.reserve(types.size());
-        for(size_t i=0;i<types.size();++i)
-        {
-            names.push_back(utils::to_description(types[i]));
-        }
+        types.resize(std::distance(types.begin(), dst));
     }
     /** Calculate the required buffer size
      *
@@ -270,3 +265,4 @@ namespace illumina { namespace interop { namespace logic { namespace plot
 
 
 }}}}
+

@@ -50,7 +50,15 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          */
         error_metric() :
                 metric_base::base_cycle_metric(0, 0, 0),
-                m_error_rate(0),
+                m_error_rate(std::numeric_limits<float>::quiet_NaN()),
+                m_mismatch_cluster_count(MAX_MISMATCH, 0)
+        {
+        }
+        /** Constructor
+         */
+        error_metric(const header_type&) :
+                metric_base::base_cycle_metric(0, 0, 0),
+                m_error_rate(std::numeric_limits<float>::quiet_NaN()),
                 m_mismatch_cluster_count(MAX_MISMATCH, 0)
         {
         }
@@ -160,3 +168,4 @@ namespace illumina { namespace interop { namespace model { namespace metrics
         struct io::generic_layout;
     };
 }}}}
+

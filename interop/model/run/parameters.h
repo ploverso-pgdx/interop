@@ -1,6 +1,6 @@
 /** Additional metadata describing a sequencing run
  *
- * The files parsed by this class include:
+ * The InterOp files parsed by this class include:
  *  - RunParameters.xml
  *
  *  @file
@@ -115,3 +115,4 @@ namespace illumina { namespace interop { namespace model { namespace run
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+

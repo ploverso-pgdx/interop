@@ -1,9 +1,16 @@
 
 function(add_application _target _source_files)
-    add_executable(${_target} ${_source_files} inc/application.h inc/plot_options.h)
+
+    if(MSVC)
+        set(SWIG_VERSION_INFO "${CMAKE_CURRENT_BINARY_DIR}/${_target}_version.rc")
+        set(LIB_NAME "${_target}") # Used to configure the version info file
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/version.rc.in ${SWIG_VERSION_INFO} @ONLY) # Requires: LIB_NAME, VERSION_LIST and VERSION
+    endif()
+
+    add_executable(${_target} ${_source_files} inc/application.h inc/plot_options.h ${SWIG_VERSION_INFO})
     target_link_libraries(${_target} ${INTEROP_LIB})
 
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang" OR CMAKE_COMPILER_IS_GNUCC)
+    if(COMPILER_IS_GNUCC_OR_CLANG)
         set_target_properties(${_target} PROPERTIES COMPILE_FLAGS "${CXX_PEDANTIC_FLAG}" )
     endif()
 
@@ -21,11 +28,10 @@ function(add_application _target _source_files)
     endif()
 endfunction()
 
-if(MSVC)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS)
-endif()
+set(SWIG_VERSION_INFO "")
 
 add_application(interop2csv interop2csv.cpp)
+add_application(dumptext dumptext.cpp)
 add_application(cyclesim cyclesim.cpp)
 add_application(summary summary.cpp)
 add_application(index-summary index_summary.cpp)

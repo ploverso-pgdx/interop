@@ -39,6 +39,11 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
         }
 
     protected:
+        /** Does nothing
+         *
+         * @todo remove this method
+         */
+        void clear(){}
         /** Update max cycle
          *
          * This does nothing, and is here for compatibility.
@@ -52,12 +57,9 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
      *
      * These classes define both a lane, tile and read identifier.
      */
-    class base_read_metric : public base_metric {
+    class base_read_metric : public base_metric
+    {
     public:
-        enum {
-            /** Base for records written out once for each tile/read */
-            BASE_TYPE = constants::BaseReadType
-        };
         /** A read metric_set header
          */
         typedef base_read_metric_header header_type;
@@ -74,7 +76,16 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
                 base_metric(lane, tile), m_read(read) { }
 
     public:
-
+        /** Set id
+         *
+         * @note This is only supported to enable easier unit testing, this should not be used.
+         * @param lane lane number
+         * @param tile tile number
+         */
+        void set_base(const uint_t lane, const uint_t tile)
+        {
+            base_metric::set_base(lane, tile);
+        }
         /**
          * Sets ID given lane-tile-read as opposed to the BaseReadMetric
          *
@@ -92,12 +103,11 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
          * @param base layout base
          */
         template<class BaseReadMetric>
-        void set_base(const BaseReadMetric &base) {
+        void set_base(const BaseReadMetric &base)
+        {
             base_metric::set_base(base);
             m_read = base.read;
         }
-
-
 
         /** Read number
          *
@@ -123,7 +133,7 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
          */
         static id_t create_id(const id_t lane, const id_t tile, const id_t read)
         {
-            return base_metric::create_id(lane, tile) | read;
+            return base_metric::create_id(lane, tile) | (read << READ_BIT_SHIFT);
         }
         /** Get the read from the unique lane/tile/read id
          *
@@ -132,12 +142,20 @@ namespace illumina { namespace interop { namespace model { namespace metric_base
          */
         static id_t read_from_id(const id_t id)
         {
-            // Mask tile hash (lane + tile)
-            return id & ~((~static_cast<id_t>(0)) << TILE_BIT_SHIFT);
+            // 1. Shift off lane and tile bits
+            // 2. Shift back, while shifting off reserved bits
+            return (id << (LANE_BIT_COUNT+TILE_BIT_COUNT)) >> (LANE_BIT_COUNT+TILE_BIT_COUNT+RESERVED_BIT_COUNT);
         }
 
     private:
         uint_t m_read;
     };
+
+    /** Specialization for base_cycle_metric providing sentinel values*/
+    template<>
+    struct metric_attributes<base_read_metric> : public metric_attributes<base_metric>{};
+
+
 }}}}
+
 

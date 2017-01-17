@@ -16,7 +16,6 @@
 #include <cctype>
 #include "interop/logic/utils/channel.h" // todo remove thiss
 #include "interop/model/run/info.h"
-#include "interop/util/lexical_cast.h"
 #include "interop/util/xml_parser.h"
 #include "interop/io/metric_stream.h"
 #include "interop/logic/utils/enums.h"
@@ -169,12 +168,12 @@ namespace illumina { namespace interop { namespace model { namespace run
     xml::missing_xml_element_exception,
     xml::xml_parse_exception)
     {
-        if (run_folder.find("RunInfo.xml") != std::string::npos)
+        if (run_folder.find(io::paths::run_info()) != std::string::npos)
         {
             read_file(run_folder);
             return;
         }
-        read_file(io::combine(run_folder, "RunInfo.xml"));
+        read_file(io::paths::run_info(run_folder));
     }
     /** Test if tile list matches flowcell layout
      *
@@ -226,7 +225,7 @@ namespace illumina { namespace interop { namespace model { namespace run
         if(surface > m_flowcell.surface_count())
             INTEROP_THROW(invalid_run_info_exception, "Surface number exceeds number of surfaces");
         const ::uint32_t section = logic::metric::section(tile, m_flowcell.naming_method());
-        if(section > m_flowcell.sections_per_lane())
+        if(m_flowcell.m_naming_method == constants::FiveDigit && section > m_flowcell.total_number_of_sections())
             INTEROP_THROW(invalid_run_info_exception, "Section number exceeds number of sections");
     }
 
@@ -264,4 +263,5 @@ namespace illumina { namespace interop { namespace model { namespace run
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 

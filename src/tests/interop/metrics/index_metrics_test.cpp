@@ -7,33 +7,48 @@
  *  @copyright GNU Public License.
  */
 
-#include <fstream>
 #include <gtest/gtest.h>
-#include "inc/index_metrics_test.h"
 #include "interop/model/run_metrics.h"
+#include "src/tests/interop/metrics/inc/index_metrics_test.h"
+#include "src/tests/interop/inc/generic_fixture.h"
+#include "src/tests/interop/inc/proxy_parameter_generator.h"
+#include "src/tests/interop/metrics/inc/metric_generator.h"
 using namespace illumina::interop::model::metrics;
+using namespace illumina::interop::model::metric_base;
 using namespace illumina::interop::io;
 using namespace illumina::interop;
 using namespace illumina::interop::unittest;
 
-typedef ::testing::Types<
-        hardcoded_fixture<index_v1>,
-        write_read_fixture<index_v1>
-> Formats;
-TYPED_TEST_CASE(index_metrics_test, Formats);
+
+typedef metric_set< index_metric > index_metric_set;
+/** Setup for tests that compare two index metric sets */
+struct index_metrics_tests : public generic_test_fixture< index_metric_set > {};
+
+index_metrics_tests::generator_type index_unit_test_generators[] = {
+        wrap(new hardcoded_metric_generator< index_metric_v1 >),
+        wrap(new write_read_metric_generator< index_metric_v1 >)
+};
+
+// Setup unit tests for index_metrics_tests
+INSTANTIATE_TEST_CASE_P(index_metric_unit_test,
+                        index_metrics_tests,
+                        ::testing::ValuesIn(index_unit_test_generators));
 
 /**
  * @class illumina::interop::model::metrics::index_metric
  * @test Confirm version 1 of the metric can be written to and read from a stream
  * @test Confirm version 1 of the metric matches known binary file
  */
-TYPED_TEST(index_metrics_test, test_read_write)
+TEST_P(index_metrics_tests, test_read_write)
 {
-    EXPECT_EQ(TypeParam::actual_metric_set.version(), TypeParam::VERSION);
-    EXPECT_EQ(TypeParam::actual_metric_set.size(), TypeParam::expected_metric_set.size());
+    typedef index_metric_set::const_iterator const_iterator;
+    if(skip_test) return;
+    ASSERT_TRUE(fixture_test_result);
+    EXPECT_EQ(actual.version(), expected.version());
+    ASSERT_EQ(actual.size(), expected.size());
 
-    for(typename TypeParam::const_iterator it_expected=TypeParam::expected_metric_set.begin(), it_actual = TypeParam::actual_metric_set.begin();
-        it_expected != TypeParam::expected_metric_set.end() && it_actual != TypeParam::actual_metric_set.end();
+    for(const_iterator it_expected=expected.begin(), it_actual = actual.begin();
+        it_expected != expected.end() && it_actual != actual.end();
         it_expected++,it_actual++)
     {
         EXPECT_EQ(it_expected->lane(), it_actual->lane());
@@ -45,29 +60,21 @@ TYPED_TEST(index_metrics_test, test_read_write)
             EXPECT_EQ(it_expected->indices(i).index_seq(), it_actual->indices(i).index_seq());
             EXPECT_EQ(it_expected->indices(i).sample_id(), it_actual->indices(i).sample_id());
             EXPECT_EQ(it_expected->indices(i).sample_proj(), it_actual->indices(i).sample_proj());
-            EXPECT_EQ(it_expected->indices(i).count(), it_actual->indices(i).count());
+            EXPECT_EQ(it_expected->indices(i).cluster_count(), it_actual->indices(i).cluster_count());
         }
     }
 }
 
-TEST(run_metrics_index_test, test_is_group_empty)
-{
-    run_metrics metrics;
-    EXPECT_TRUE(metrics.is_group_empty(constants::Index));
-    std::istringstream fin(index_v1::binary_data());
-    io::read_metrics(fin, metrics.get_set<index_metric>());
-    EXPECT_FALSE(metrics.is_group_empty(constants::Index));
-}
-#define FIXTURE index_metrics_test
-/**
- * @class illumina::interop::model::metrics::index_metric
- * @test Confirm bad_format_exception is thrown when version is unsupported
- * @test Confirm incomplete_file_exception is thrown for a small partial record
- * @test Confirm incomplete_file_exception is thrown for a mostly complete file
- * @test Confirm bad_format_exception is thrown when record size is incorrect
- * @test Confirm file_not_found_exception is thrown when a file is not found
- * @test Confirm reading from good data does not throw an exception
- */
-#include "inc/stream_tests.hpp"
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Setup regression test
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+regression_test_metric_generator<index_metric_set> index_regression_gen;
+INSTANTIATE_TEST_CASE_P(index_metric_regression_test,
+                        index_metrics_tests,
+                        ProxyValuesIn(index_regression_gen, regression_test_data::instance().files()));
+
+
+
 
 

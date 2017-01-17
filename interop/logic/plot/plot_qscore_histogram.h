@@ -5,11 +5,13 @@
  *  @version 1.0
  *  @copyright GNU Public License.
  */
+#pragma once
 
 #include "interop/model/run_metrics.h"
 #include "interop/model/plot/filter_options.h"
 #include "interop/model/plot/bar_point.h"
 #include "interop/logic/plot/plot_data.h"
+#include "interop/logic/utils/metrics_to_load.h"
 
 namespace illumina { namespace interop { namespace logic { namespace plot {
 
@@ -31,3 +33,4 @@ namespace illumina { namespace interop { namespace logic { namespace plot {
                                 model::invalid_filter_option);
 
 }}}}
+

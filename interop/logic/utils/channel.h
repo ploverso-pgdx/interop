@@ -95,7 +95,7 @@ namespace illumina { namespace interop { namespace logic { namespace utils
             std::swap(expected[0], expected[1]);
             return expected;
         }
-        INTEROP_THROW( model::invalid_channel_exception, "Invalid channel names");
+        INTEROP_THROW( model::invalid_channel_exception, "Invalid channel names: " << norm);
     }
 
     /** Expected channel order
@@ -138,6 +138,8 @@ namespace illumina { namespace interop { namespace logic { namespace utils
         normed.reserve(channels.size());
         normalize(channels.begin(), channels.end(), std::back_inserter(normed));
         std::vector<std::string> expected = expected_order(normed);
+        map.resize(normed.size());
+        INTEROP_ASSERTMSG(expected.size() == normed.size(), expected.size() << " == " << normed.size());
         for(size_t i=0;i<normed.size();++i)
         {
             map[i] = std::distance(expected.begin(), std::find(expected.begin(), expected.end(), normed[i]));
@@ -168,20 +170,26 @@ namespace illumina { namespace interop { namespace logic { namespace utils
     }
     /** Update channels from instrument type
      *
+     * @param instrument enum type of instrument
+     * @param channels destination vector for channels
      */
-    inline std::vector<std::string> update_channel_from_instrument_type(const constants::instrument_type instrument)
+    inline void update_channel_from_instrument_type(const constants::instrument_type instrument,
+                                                    std::vector<std::string>& channels)
     {
-        std::vector<std::string> channels;
         switch(instrument)
         {
             case constants::MiniSeq:
             case constants::NextSeq:
+                channels.clear();
+                channels.reserve(2);
                 channels.push_back("Red");
                 channels.push_back("Green");
                 break;
             case constants::HiSeq:
             case constants::MiSeq:
             case constants::HiScan:
+                channels.clear();
+                channels.reserve(4);
                 channels.push_back("A");
                 channels.push_back("C");
                 channels.push_back("G");
@@ -190,6 +198,16 @@ namespace illumina { namespace interop { namespace logic { namespace utils
             default:
                 break;
         };
+    }
+    /** Update channels from instrument type
+     *
+     * @param instrument enum type of instrument
+     * @return vector of channel names
+     */
+    inline std::vector<std::string> update_channel_from_instrument_type(const constants::instrument_type instrument)
+    {
+        std::vector<std::string> channels;
+        update_channel_from_instrument_type(instrument, channels);
         return channels;
     }
 
@@ -198,3 +216,4 @@ namespace illumina { namespace interop { namespace logic { namespace utils
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+

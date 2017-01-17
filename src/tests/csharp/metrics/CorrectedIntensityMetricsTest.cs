@@ -25,7 +25,6 @@ namespace Illumina.InterOp.Interop.UnitTest
 		/// </summary>
 		protected vector_corrected_intensity_metrics expected_metrics = new vector_corrected_intensity_metrics();
 	    base_corrected_intensity_metrics actual_metric_set = new base_corrected_intensity_metrics();
-	    vector_corrected_intensity_metrics actual_metrics;
 	    byte[] expected_binary_data;
 		/// <summary>
 		/// The setup should be overridden by the specific version of the format
@@ -45,7 +44,6 @@ namespace Illumina.InterOp.Interop.UnitTest
 	        for(int i=0;i<expected_binary_data.Length;i++) expected_binary_data[i] = (byte)tmp[i];
 			expected_metric_set = new base_corrected_intensity_metrics(expected_metrics, version, header);
 	        c_csharp_comm.read_interop_from_buffer(expected_binary_data, (uint)expected_binary_data.Length, actual_metric_set);
-	        actual_metrics = actual_metric_set.metrics();
 	        //actual_binary_data = write_metrics(actual_metric_set);
 	    }
 		/// <summary>
@@ -58,24 +56,24 @@ namespace Illumina.InterOp.Interop.UnitTest
 	        Assert.AreEqual(expected_metric_set.version(),  actual_metric_set.version());
 	        Assert.AreEqual(expected_metric_set.size(),  actual_metric_set.size());
 
-	        for(int i=0;i<Math.Min(expected_metrics.Count, actual_metrics.Count);i++)
+	        for(uint i=0;i<Math.Min((uint)expected_metrics.Count, actual_metric_set.size());i++)
 	        {
-	            Assert.AreEqual(expected_metrics[i].lane(), actual_metrics[i].lane());
-	            Assert.AreEqual(expected_metrics[i].tile(), actual_metrics[i].tile());
-	            Assert.AreEqual(expected_metrics[i].cycle(), actual_metrics[i].cycle());
+	            Assert.AreEqual(expected_metric_set.at(i).lane(), actual_metric_set.at(i).lane());
+	            Assert.AreEqual(expected_metric_set.at(i).tile(), actual_metric_set.at(i).tile());
+	            Assert.AreEqual(expected_metric_set.at(i).cycle(), actual_metric_set.at(i).cycle());
 	            if(Version < 3)
-	                Assert.AreEqual(expected_metrics[i].averageCycleIntensity(), actual_metrics[i].averageCycleIntensity());
+	                Assert.AreEqual(expected_metric_set.at(i).averageCycleIntensity(), actual_metric_set.at(i).averageCycleIntensity());
 	            if(Version == 2)
-	                Assert.AreEqual(expected_metrics[i].signalToNoise(), actual_metrics[i].signalToNoise(), 1e-7);
+	                Assert.AreEqual(expected_metric_set.at(i).signalToNoise(), actual_metric_set.at(i).signalToNoise(), 1e-7);
 	            for(int j=-1;j<(int)dna_bases.NUM_OF_BASES;j++)
 	            {
-	                Assert.AreEqual(expected_metrics[i].calledCounts(j), actual_metrics[i].calledCounts(j));
+	                Assert.AreEqual(expected_metric_set.at(i).calledCounts(j), actual_metric_set.at(i).calledCounts(j));
 	            }
 	            for(uint j=0;j<(uint)dna_bases.NUM_OF_BASES;j++)
 	            {
-	                Assert.AreEqual(expected_metrics[i].correctedIntCalled(j), actual_metrics[i].correctedIntCalled(j));
+	                Assert.AreEqual(expected_metric_set.at(i).correctedIntCalled(j), actual_metric_set.at(i).correctedIntCalled(j));
 	                if(Version<3)
-	                Assert.AreEqual(expected_metrics[i].correctedIntAll(j), actual_metrics[i].correctedIntAll(j));
+	                Assert.AreEqual(expected_metric_set.at(i).correctedIntAll(j), actual_metric_set.at(i).correctedIntAll(j));
 	            }
 	        }
 	    }
@@ -98,6 +96,7 @@ namespace Illumina.InterOp.Interop.UnitTest
 			ushort[] correctedIntAll1 = new ushort[]{1213, 966, 960, 1095};
 			ushort[] correctedIntCalled1 = new ushort[]{4070, 4074, 4029, 3972};
 			uint[] calledCounts1 = new uint[]{0, 698433, 548189, 548712, 646638};
+			expected_metrics.Clear();
 			expected_metrics.Add(
 				new corrected_intensity_metric(1, 1104, 25, 1063, 11.9458876f, correctedIntCalled1, correctedIntAll1,
 					calledCounts1));
@@ -140,6 +139,7 @@ namespace Illumina.InterOp.Interop.UnitTest
 		{
 			uint_vector calledCounts1 = new uint_vector(new uint[]{52, 1049523, 654071, 500476, 982989});
 			ushort_vector correctedIntCalled1 = new ushort_vector(new ushort[]{245, 252, 61, 235});
+			expected_metrics.Clear();
 			expected_metrics.Add(new corrected_intensity_metric(7, 1114, 1, correctedIntCalled1, (calledCounts1)));
 			uint_vector calledCounts2 = new uint_vector(new uint[]{0, 1063708, 582243, 588028, 953132});
 			ushort_vector correctedIntCalled2 = new ushort_vector(new ushort[]{232, 257, 68, 228});
@@ -154,17 +154,6 @@ namespace Illumina.InterOp.Interop.UnitTest
 				0, 0, 0, 0, 0, -48, -101, 15, 0, 51, 108, 9, 0, -108, 19, 9, 0, 17, -122, 14, 0
 			};
 			SetupBuffers (tmp,Version);
-		}
-		/// <summary>
-		/// Confirm that GetMetricsByCycle returns the correct result
-		/// </summary>
-		[Test]
-		public void TestGetMetricsByCycle()
-		{
-			IEnumerable<corrected_intensity_metric> metric = expected_metric_set.GetMetricsByCycle(7,1114, Enumerable.Range(1,3));
-			Assert.IsTrue(metric.Any());
-			//IEnumerable<corrected_intensity_metric> metric = actual_metric_set.GetMetricsByCycle(7,1114, Enumerable.Range(1,3));
-			//Assert.IsTrue(metric.Any());
 		}
 	}
 }

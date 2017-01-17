@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <ctime>
 #include "interop/model/run/parameters.h"
-#include "interop/util/lexical_cast.h"
 #include "interop/util/xml_parser.h"
 #include "interop/io/metric_stream.h"
 #include "interop/logic/utils/enums.h"
@@ -92,7 +91,8 @@ namespace illumina { namespace interop { namespace model { namespace run
         }
     }
 
-    void parameters::read_file(const std::string &filename)   throw(xml::xml_file_not_found_exception,
+    void parameters::read_file(const std::string &filename)
+    throw(xml::xml_file_not_found_exception,
     xml::bad_xml_format_exception,
     xml::empty_xml_format_exception,
     xml::missing_xml_element_exception,
@@ -116,19 +116,19 @@ namespace illumina { namespace interop { namespace model { namespace run
     xml::xml_parse_exception)
     {
 
-        if (run_folder.find("RunParameters.xml") != std::string::npos ||
-            run_folder.find("runParameters.xml") != std::string::npos)
+        if (run_folder.find(io::paths::run_parameters()) != std::string::npos ||
+            run_folder.find(io::paths::run_parameters(true)) != std::string::npos)
         {
             read_file(run_folder);
             return;
         }
         try
         {
-            read_file(io::combine(run_folder, "runParameters.xml"));
+            read_file(io::paths::run_parameters(run_folder, true));
         }
-        catch (const io::file_not_found_exception &)
+        catch (const xml_file_not_found_exception &)
         {
-            read_file(io::combine(run_folder, "RunParameters.xml"));
+            read_file(io::paths::run_parameters(run_folder));
         }
 
     }
@@ -139,4 +139,5 @@ namespace illumina { namespace interop { namespace model { namespace run
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 

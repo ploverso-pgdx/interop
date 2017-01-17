@@ -25,11 +25,21 @@ namespace illumina { namespace interop { namespace model { namespace summary
          */
         metric_stat(const float mean = 0,
                     const float stddev = 0,
-                    const float median = 0) :
+                    const float median = std::numeric_limits<float>::quiet_NaN()) :
                 m_mean(mean),
                 m_stddev(stddev),
                 m_median(median)
         {
+        }
+
+    public:
+        /** Clear the stat variables
+         */
+        void clear()
+        {
+            m_mean = 0;
+            m_stddev = 0;
+            m_median = std::numeric_limits<float>::quiet_NaN();
         }
 
     public:
@@ -106,3 +116,4 @@ namespace illumina { namespace interop { namespace model { namespace summary
     };
 
 }}}}
+

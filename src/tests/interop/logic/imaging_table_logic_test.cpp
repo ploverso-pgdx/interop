@@ -10,9 +10,8 @@
 #include <gmock/gmock.h>
 #include "interop/util/length_of.h"
 #include "interop/logic/table/create_imaging_table.h"
-#include "src/tests/interop/metrics/inc/error_metrics_test.h"
-#include "src/tests/interop/inc/regression_fixture.h"
 #include "interop/io/table/imaging_table_csv.h"
+#include "src/tests/interop/metrics/inc/error_metrics_test.h"
 
 using namespace illumina::interop;
 using namespace illumina::interop::unittest;
@@ -57,8 +56,7 @@ void simulate_read_error_metrics(model::metrics::run_metrics& metrics)
     metrics.legacy_channel_update(constants::HiSeq);
     metrics.set_naming_method(constants::FourDigit);
 
-    std::istringstream iss(unittest::error_v3::binary_data());
-    io::read_metrics(iss, metrics.get_set<model::metrics::error_metric>());
+    unittest::error_metric_v3::create_expected(metrics.get<model::metrics::error_metric>());
 }
 /**
  * @class illumina::interop::model::table::imaging_table
@@ -89,7 +87,12 @@ TEST(imaging_table, base_header_test)
     const std::string expected_subcolumns[] = {
             "A", "C", "G", "T"
     };
-    EXPECT_THAT(to_vector(expected_subcolumns), ::testing::ElementsAreArray(columns[0].subcolumns()));
+    EXPECT_THAT(util::to_vector(expected_subcolumns), ::testing::ElementsAreArray(columns[0].subcolumns()));
+}
+
+TEST(imaging_table, max_digits)
+{
+    EXPECT_EQ(logic::table::max_digits(), 3u);
 }
 
 TEST(imaging_table, test_write_column_name)
@@ -177,7 +180,7 @@ TEST(imaging_table, create_imaging_table_columns_error_metrics)
             model::table::imaging_column(model::table::TileNumberColumn, 8)
     };
 
-    EXPECT_THAT(to_vector(expected_columns), ::testing::ElementsAreArray(columns));
+    EXPECT_THAT(util::to_vector(expected_columns), ::testing::ElementsAreArray(columns));
 }
 TEST(imaging_table, create_imaging_table_error_metrics)
 {
@@ -185,7 +188,7 @@ TEST(imaging_table, create_imaging_table_error_metrics)
     simulate_read_error_metrics(metrics);
 
     std::vector<model::table::imaging_column> columns;
-    std::map<model::metric_base::base_metric::id_t, size_t> row_offsets;
+    logic::table::row_offset_map_t row_offsets;
     logic::table::create_imaging_table_columns(metrics, columns);
     const size_t column_count = logic::table::count_table_columns(columns);
     logic::table::count_table_rows(metrics, row_offsets);
@@ -216,4 +219,5 @@ TEST(imaging_table, create_imaging_table_error_metrics_tile_test)
     EXPECT_EQ(table(1, model::table::SurfaceColumn), 1.0f);
     EXPECT_EQ(table(1, model::table::SwathColumn), 1.0f);
 }
+
 

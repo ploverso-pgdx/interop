@@ -25,6 +25,49 @@
 
 namespace illumina { namespace interop { namespace model { namespace metrics
 {
+    /** Header information for writing an image metric set
+     */
+    class extraction_metric_header : public metric_base::base_cycle_metric::header_type
+    {
+    public:
+        enum{
+            /** Maximum number of channels supported **/
+            MAX_CHANNELS=4
+        };
+        /** Unsigned int16_t
+         */
+        typedef ::uint16_t ushort_t;
+    public:
+        /** Constructor
+         *
+         * @param channel_count number of channels
+         */
+        extraction_metric_header(ushort_t channel_count) : m_channel_count(channel_count) {}
+        /** Number of channels
+         *
+         * @return number of channels
+         */
+        ushort_t channel_count()const{return m_channel_count;}
+        /** Generate a default header
+         *
+         * @return default header
+         */
+        static extraction_metric_header default_header()
+        {
+            return extraction_metric_header(MAX_CHANNELS);
+        }
+        /** Clear the data
+         */
+        void clear()
+        {
+            m_channel_count=MAX_CHANNELS;
+            metric_base::base_cycle_metric::header_type::clear();
+        }
+    private:
+        ushort_t m_channel_count;
+        template<class MetricType, int Version>
+        friend struct io::generic_layout;
+    };
     /** Extraction metric
      *
      * The extraction metrics include the max intensity and the focus score for each color channel.
@@ -43,6 +86,8 @@ namespace illumina { namespace interop { namespace model { namespace metrics
             /** Latest version of the InterOp format */
             LATEST_VERSION = 2
         };
+        /** Extraction metric header */
+        typedef extraction_metric_header header_type;
         /** Define a uint16_t array using an underlying vector
          */
         typedef std::vector<ushort_t> ushort_array_t;
@@ -65,6 +110,18 @@ namespace illumina { namespace interop { namespace model { namespace metrics
                 m_date_time(0),
                 m_max_intensity_values(MAX_CHANNELS, 0),
                 m_focus_scores(MAX_CHANNELS, 0)
+        {
+        }
+        /** Constructor
+         *
+         * @param header extraction metric header
+         */
+        extraction_metric(const header_type& header) :
+                metric_base::base_cycle_metric(0, 0, 0),
+                m_date_time_csharp(0),
+                m_date_time(0),
+                m_max_intensity_values(header.channel_count(), 0),
+                m_focus_scores(header.channel_count(), 0)
         {
         }
 
@@ -267,7 +324,7 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          *
          * @return number of channels
          */
-        size_t channel_count() const
+        size_t channel_count()const
         {
             return m_focus_scores.size();
         }
@@ -313,6 +370,15 @@ namespace illumina { namespace interop { namespace model { namespace metrics
          */
         const float_array_t &focusScores() const
         { return m_focus_scores; }
+        /** Set the current extraction time
+         *
+         * @param time current time
+         */
+        void date_time(const ulong_t time)
+        {
+            m_date_time=time;
+            m_date_time_csharp = util::csharp_date_time::to_csharp(time);
+        }
 
     public:
         /** Get the prefix of the InterOp filename
@@ -332,4 +398,5 @@ namespace illumina { namespace interop { namespace model { namespace metrics
         struct io::generic_layout;
     };
 }}}}
+
 

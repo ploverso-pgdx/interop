@@ -9,7 +9,7 @@
 #include <vector>
 #include <gtest/gtest.h>
 #include "src/tests/interop/inc/failure_listener.h"
-#include "src/tests/interop/inc/regression_fixture.h"
+#include "src/tests/interop/inc/regression_test_data.h"
 using namespace illumina::interop::unittest;
 
 int main(int argc, char **argv)
@@ -34,6 +34,7 @@ int main(int argc, char **argv)
         }
         data.add_file(arg);
     }
+    data.finalize();
 
 
     // initialize
@@ -52,13 +53,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // remove the default listener
-    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
-    ::testing::TestEventListener *default_printer = listeners.Release(listeners.default_result_printer());
-    // Add listener that will only print failures
-    failure_listener *listener = new failure_listener(default_printer);
-    listeners.Append(listener);
 
+    {
+        // remove the default listener
+        ::testing::TestEventListeners &listeners = ::testing::UnitTest::GetInstance()->listeners();
+        ::testing::TestEventListener *default_printer = listeners.Release(listeners.default_result_printer());
+        // Add listener that will only print failures
+        failure_listener *listener = new failure_listener(default_printer);
+        listeners.Append(listener);
+    }
 
     // run
     try
@@ -71,4 +74,5 @@ int main(int argc, char **argv)
         return 1;
     }
 }
+
 

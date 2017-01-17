@@ -10,6 +10,7 @@
 #include "interop/model/run_metrics.h"
 #include "interop/model/plot/filter_options.h"
 #include "interop/model/plot/heatmap_data.h"
+#include "interop/logic/utils/metrics_to_load.h"
 
 namespace illumina { namespace interop { namespace logic { namespace plot
 {
@@ -20,11 +21,13 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      * @param options options to filter the data
      * @param data output heat map data
      * @param buffer optional buffer of preallocated memory (for SWIG)
+     * @param buffer_size number of elements in buffer
      */
     void plot_qscore_heatmap(model::metrics::run_metrics& metrics,
                                     const model::plot::filter_options& options,
                                     model::plot::heatmap_data& data,
-                                    float* buffer=0)
+                                    float* buffer=0,
+                                    const size_t buffer_size=0)
                                     throw(model::index_out_of_bounds_exception,
                                     model::invalid_filter_option);
     /** Count number of rows for the heat map
@@ -42,3 +45,4 @@ namespace illumina { namespace interop { namespace logic { namespace plot
 
 
 }}}}
+

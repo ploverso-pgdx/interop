@@ -30,6 +30,7 @@ Table of Contents
 | [Issues]                      | Have a question? Need a feature? Found a bug? Interact with the developers here.     |
 | [Performance](@ref perf)      | Computation performance of the code                                                  |
 | [Changes](@ref changes)       | Changes between releases of the source code                                          |
+| [Formats](@ref binary_formats)| Description of the binary formats for each InterOp file                              |
 
 [Source Code]: https://github.com/Illumina/interop
 [Issues]: https://github.com/Illumina/interop/issues
@@ -73,6 +74,8 @@ There are several known limitations to the current library:
   4. We do not support Mono on Windows
   5. If both Visual Studio and Mono are installed, the build script will only use Visual Studio for C#
   6. We do not support 32-bit builds
+  7. MinGW W64 4.9.x and prior will not link properly
+  8. Visual Studio 12 2013 is not supported for the C# Bindings (Results in heap corruption)
 
 SAV Analysis Tab
 ----------------

@@ -22,10 +22,11 @@ namespace illumina { namespace interop { namespace model { namespace metrics
     {
     public:
         enum {
+
             /** Unique type code for metric */
             TYPE = constants::QByLane,
-            /** Tells the reader to include any records that have 0 for tile */
-            CHECK_TILE_ID = 0
+            /** Latest version of the InterOp format */
+            LATEST_VERSION = 6
         };
         /** Define the base type */
         typedef constants::base_lane_t base_t;
@@ -33,6 +34,13 @@ namespace illumina { namespace interop { namespace model { namespace metrics
         /** Constructor
          */
         q_by_lane_metric() {}
+        /** Constructor
+         *
+         * @param header header of q-metric set
+         */
+        q_by_lane_metric(const header_type& header) : q_metric(header)
+        {
+        }
         /** Constructor
          *
          * @param lane lane number
@@ -81,17 +89,4 @@ namespace illumina { namespace interop { namespace model { namespace metrics
 
 }}}}
 
-namespace illumina { namespace interop { namespace io
-{
-    /** Specialization of metric type adapter
-     *
-     * This class allows a metric derived from another metric to use it's format
-     * For example, q_by_lane_metric uses the q_metric format
-     */
-    template<>
-    struct metric_format_adapter<model::metrics::q_by_lane_metric>
-    {
-        /** Define the template parameter as the target type */
-        typedef model::metrics::q_metric metric_t;
-    };
-}}}
+

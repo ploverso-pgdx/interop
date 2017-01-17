@@ -27,7 +27,7 @@ how to build the source. Carefully consider the prerequisites before trying to b
 The following are the minimum requirements to build the source:
 
 - C/C++ Compiler (C++98)
-    - Windows: [MinGW], [Cygwin], Microsoft Visual C++, [Express]
+    - Windows: [MinGW] 6.x or later, [Cygwin], Microsoft Visual C++, [Express]
     - Linux: GCC, CLang
     - Mac OSX: CLang
 - [CMake] Version 3.2 or later
@@ -51,6 +51,7 @@ Tips for Prerequisites
     
   - CMake and SWIG will likely need to be installed from the source on Linux
   - On Windows, CMake will likely need to know the location of SWIG, see Example configurations below
+  - When using Visual Studio, use 2015 or later.
 
 [NUnit]: http://www.nunit.org/
 [Git]: https://git-scm.com/

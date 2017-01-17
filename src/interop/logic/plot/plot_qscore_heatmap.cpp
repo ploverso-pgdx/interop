@@ -52,7 +52,6 @@ namespace illumina { namespace interop { namespace logic { namespace plot
         for (;beg != end;++beg)
         {
             if( !options.valid_tile(*beg) ) continue;
-
             for(size_t bin =0;bin < beg->size();++bin)
                 data(beg->cycle()-1, bin) += beg->qscore_hist(bin);
         }
@@ -108,18 +107,18 @@ namespace illumina { namespace interop { namespace logic { namespace plot
     {
         const size_t max_q_val = logic::metric::max_qval(metric_set);
         const size_t max_cycle = metric_set.max_cycle();
-        if(buffer != 0) data.set_buffer(buffer, max_cycle, max_q_val);
-        else data.resize(max_cycle, max_q_val);
+        if(buffer != 0) data.set_buffer(buffer, max_cycle, max_q_val, 0);
+        else data.resize(max_cycle, max_q_val, 0);
         INTEROP_ASSERT(data.row_count() > 0);
         INTEROP_ASSERTMSG(data.column_count() > 0, data.column_count() << ", " << metric_set.size() << ", "
                                                    << metric_set.bin_count() << ", "
                                                    << metric::is_compressed(metric_set) << ", "
-                                                   << metric_set.bins().back().upper());
+                                                   << metric_set.get_bins().back().upper());
         const bool is_compressed = logic::metric::is_compressed(metric_set);
         if(is_compressed)
             populate_heatmap_from_compressed(metric_set.begin(),
                                              metric_set.end(),
-                                             metric_set.bins(),
+                                             metric_set.get_bins(),
                                              options,
                                              data);
         else
@@ -128,8 +127,8 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                                                options,
                                                data);
         normalize_heatmap(data);
-        remap_to_bins(metric_set.bins().begin(),
-                      metric_set.bins().end(),
+        remap_to_bins(metric_set.get_bins().begin(),
+                      metric_set.get_bins().end(),
                       data.row_count(),
                       data);
     }
@@ -144,26 +143,28 @@ namespace illumina { namespace interop { namespace logic { namespace plot
     void plot_qscore_heatmap(model::metrics::run_metrics& metrics,
                                     const model::plot::filter_options& options,
                                     model::plot::heatmap_data& data,
-                                    float* buffer)
+                                    float* buffer,
+                                    const size_t)
     throw(model::index_out_of_bounds_exception,
     model::invalid_filter_option)
     {
-        options.validate(constants::QScore, metrics.run_info());
         data.clear();
         if(options.is_specific_surface())
         {
             typedef model::metrics::q_metric metric_t;
-            if (metrics.get_set<metric_t>().size() == 0)return;
-            populate_heatmap(metrics.get_set<metric_t>(), options, data, buffer);
+            if (metrics.get<metric_t>().size() == 0)return;
+            options.validate(constants::QScore, metrics.run_info());
+            populate_heatmap(metrics.get<metric_t>(), options, data, buffer);
         }
         else
         {
             typedef model::metrics::q_by_lane_metric metric_t;
-            if(0 == metrics.get_set<metric_t>().size())
-                logic::metric::create_q_metrics_by_lane(metrics.get_set<model::metrics::q_metric>(),
-                                                        metrics.get_set<metric_t>());
-            if (metrics.get_set<metric_t>().size() == 0)return;
-            populate_heatmap(metrics.get_set<metric_t>(), options, data, buffer);
+            if(0 == metrics.get<metric_t>().size())
+                logic::metric::create_q_metrics_by_lane(metrics.get<model::metrics::q_metric>(),
+                                                        metrics.get<metric_t>());
+            if (metrics.get<metric_t>().size() == 0)return;
+            options.validate(constants::QScore, metrics.run_info());
+            populate_heatmap(metrics.get<metric_t>(), options, data, buffer);
         }
 
         data.set_xrange(0, static_cast<float>(data.row_count()));
@@ -186,7 +187,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      */
     size_t count_rows_for_heatmap(const model::metrics::run_metrics& metrics)
     {
-        return metrics.get_set< model::metrics::q_metric >().max_cycle();
+        return metrics.get< model::metrics::q_metric >().max_cycle();
     }
     /** Count number of columns for the heat map
      *
@@ -195,9 +196,10 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      */
     size_t count_columns_for_heatmap(const model::metrics::run_metrics& metrics)
     {
-        return logic::metric::max_qval(metrics.get_set< model::metrics::q_metric >());
+        return logic::metric::max_qval(metrics.get< model::metrics::q_metric >());
     }
 
 
 
 }}}}
+

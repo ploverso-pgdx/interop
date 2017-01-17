@@ -147,13 +147,14 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                        model::plot::plot_data<Point>& data)
     {
         data.clear();
+        if(metrics.is_group_empty(logic::utils::to_group(type))) return;
         if(!options.all_cycles())
-            INTEROP_THROW(model::invalid_filter_option, "Filtering by cycle is not supported");
+            INTEROP_THROW(model::invalid_filter_option, "Filtering by cycle is not supported");// TODO: Remove this!
         if(!options.all_reads())
-            INTEROP_THROW(model::invalid_filter_option, "Filtering by read is not supported");
+            INTEROP_THROW(model::invalid_filter_option, "Filtering by read is not supported");// TODO: Remove this!
         if(!utils::is_cycle_metric(type))
             INTEROP_THROW(model::invalid_filter_option, "Only cycle metrics are supported");
-        options.validate(type, metrics.run_info());
+        options.validate(type, metrics.run_info()); // TODO: Check ignored?
         size_t max_cycle=0;
         switch(logic::utils::to_group(type))
         {
@@ -166,7 +167,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                     {
                         metric::metric_value<model::metrics::extraction_metric> proxy(i);
                         max_cycle = populate_metric_average_by_cycle(
-                                metrics.get_set<model::metrics::extraction_metric>(),
+                                metrics.get<model::metrics::extraction_metric>(),
                                 proxy,
                                 options,
                                 type,
@@ -180,7 +181,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                     const size_t channel = options.channel();
                     metric::metric_value<model::metrics::extraction_metric> proxy(channel);
                     max_cycle = populate_candle_stick_by_cycle(
-                            metrics.get_set<model::metrics::extraction_metric>(),
+                            metrics.get<model::metrics::extraction_metric>(),
                             proxy,
                             options,
                             type,
@@ -198,7 +199,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                         metric::metric_value<model::metrics::corrected_intensity_metric> proxy(
                                 static_cast<constants::dna_bases>(i));
                         max_cycle = populate_metric_average_by_cycle(
-                                metrics.get_set<model::metrics::corrected_intensity_metric>(),
+                                metrics.get<model::metrics::corrected_intensity_metric>(),
                                 proxy,
                                 options,
                                 type,
@@ -212,7 +213,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                     const constants::dna_bases base = options.dna_base();
                     metric::metric_value<model::metrics::corrected_intensity_metric> proxy(base);
                     max_cycle = populate_candle_stick_by_cycle(
-                            metrics.get_set<model::metrics::corrected_intensity_metric>(),
+                            metrics.get<model::metrics::corrected_intensity_metric>(),
                             proxy,
                             options,
                             type,
@@ -226,11 +227,11 @@ namespace illumina { namespace interop { namespace logic { namespace plot
 
                 typedef model::metrics::q_collapsed_metric metric_t;
                 metric::metric_value<metric_t> proxy2;
-                if(0 == metrics.get_set<metric_t>().size())
-                    logic::metric::create_collapse_q_metrics(metrics.get_set<model::metrics::q_metric>(),
-                                                             metrics.get_set<metric_t>());
+                if(0 == metrics.get<metric_t>().size())
+                    logic::metric::create_collapse_q_metrics(metrics.get<model::metrics::q_metric>(),
+                                                             metrics.get<metric_t>());
                 max_cycle = populate_candle_stick_by_cycle(
-                        metrics.get_set<metric_t>(),
+                        metrics.get<metric_t>(),
                         proxy2,
                         options,
                         type,
@@ -242,7 +243,7 @@ namespace illumina { namespace interop { namespace logic { namespace plot
                 data.assign(1, model::plot::series<Point>());
                 metric::metric_value<model::metrics::error_metric> proxy3;
                 max_cycle = populate_candle_stick_by_cycle(
-                        metrics.get_set<model::metrics::error_metric>(),
+                        metrics.get<model::metrics::error_metric>(),
                         proxy3,
                         options,
                         type,
@@ -292,9 +293,9 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      */
     template<class Point>
     void plot_by_cycle_t(model::metrics::run_metrics& metrics,
-                       const std::string& metric_name,
-                       const model::plot::filter_options& options,
-                       model::plot::plot_data<Point>& data)
+                         const std::string& metric_name,
+                         const model::plot::filter_options& options,
+                         model::plot::plot_data<Point>& data)
     {
         const constants::metric_type type = constants::parse<constants::metric_type>(metric_name);
         if(type == constants::UnknownMetricType)
@@ -349,37 +350,26 @@ namespace illumina { namespace interop { namespace logic { namespace plot
      * @param types destination vector to fill with metric types
      * @param ignore_accumulated if true, ignore accumulated Q20 and Q30
      */
-    void list_by_cycle_metrics(std::vector<constants::metric_type>& types, const bool ignore_accumulated)
+    void list_by_cycle_metrics(std::vector< logic::utils::metric_type_description_t >& types,
+                               const bool ignore_accumulated)
     {
-        types.clear();
-        std::vector<constants::metric_type> tmp;
-        constants::list_enums(tmp);
-        types.reserve(tmp.size());
-        for(size_t i=0;i<tmp.size();++i)
+        utils::list_descriptions(types);
+        std::vector< logic::utils::metric_type_description_t >::iterator dst = types.begin();
+        for(std::vector< logic::utils::metric_type_description_t >::iterator src = types.begin();src != types.end();++src)
         {
-            if(!utils::is_cycle_metric(tmp[i])) continue;
+            const constants::metric_type type = *src;
+            if(utils::to_feature(type) == constants::UnknownMetricFeature) continue;
             if(ignore_accumulated)
             {
-                if (tmp[i] == constants::AccumPercentQ20) continue;
-                if (tmp[i] == constants::AccumPercentQ30)continue;
+                if (type == constants::AccumPercentQ20) continue;
+                if (type == constants::AccumPercentQ30)continue;
             }
-            types.push_back(tmp[i]);
+            if(!utils::is_cycle_metric(type)) continue;
+            if(src != dst) std::swap(*src, *dst);
+            ++dst;
         }
-    }
-    /** List metric type names available for by cycle plots
-     *
-     * @param names destination vector to fill with metric type names
-     * @param ignore_accumulated if true, ignore accumulated Q20 and Q30
-     */
-    void list_by_cycle_metrics(std::vector<std::string>& names, const bool ignore_accumulated)
-    {
-        std::vector<constants::metric_type> types;
-        list_by_cycle_metrics(types, ignore_accumulated);
-        names.clear();
-        names.reserve(types.size());
-        for(size_t i=0;i<types.size();++i)
-        {
-            names.push_back(utils::to_description(types[i]));
-        }
+        types.resize(std::distance(types.begin(), dst));
+
     }
 }}}}
+
